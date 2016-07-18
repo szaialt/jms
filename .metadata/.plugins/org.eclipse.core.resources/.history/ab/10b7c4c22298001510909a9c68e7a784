@@ -1,0 +1,79 @@
+package eak;
+
+import javax.annotation.PostConstruct;
+import javax.ejb.*;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.PersistenceContext;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+
+import eak.entity.Person;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Session Bean implementation class CoordinateStatisticsBean
+ */
+@Singleton(mappedName = "CoordinateStatisticsBean")
+@Local(UpdateStatistics.class)
+@Remote(CoordinateStatistics.class)
+public class CoordinateStatisticsBean implements UpdateStatistics, CoordinateStatistics {
+    Map<Long, Long> coordinateCount;
+	@PersistenceContext
+	private EntityManagerFactory emf; //Párhuzamosság!
+	
+    /**
+     * Default constructor. 
+     */
+    public CoordinateStatisticsBean() {}
+    
+    @PostConstruct
+    public void init(){
+        EntityManager em = emf.createEntityManager();
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Person> cq = cb.createQuery(Person.class);
+        Root<Person> rootEntry = cq.from(Person.class);
+        CriteriaQuery<Person> all = cq.select(rootEntry);
+        TypedQuery<Person> allQuery = em.createQuery(all);
+        List<Person> people = allQuery.getResultList();
+        for (int i = 0; i < people.size(); i++) {
+            Person somebody = people.get(i);
+            long idu = somebody.getId();
+            coordinateCount.put(idu, (long)(somebody.getCoordinates().size()));
+          }
+    }
+
+	/**
+     * @see UpdateStatistics#coordinatesAdd(long, long)
+     */
+    public void coordinatesAdd(long personId, long numberOfNewCoorinates) {
+       if (coordinateCount.containsKey(personId)){
+    	   long num = coordinateCount.get(personId);
+    	   num = num + numberOfNewCoorinates;
+    	   coordinateCount.remove(personId);
+    	   coordinateCount.put(personId, num);
+       }
+       else {
+    	   coordinateCount.put(personId, numberOfNewCoorinates);
+       }
+    }
+
+	/**
+     * @see UpdateStatistics#personRemoved(long)
+     */
+    public void personRemoved(long personId) {
+ 	   coordinateCount.remove(personId);
+    }
+
+	@Override
+	public Map<Long, Long> getCoordinateCountForAllPeople() {
+		// TODO Auto-generated method stub
+		//EZ itt ment is
+		return null;
+	}
+
+}

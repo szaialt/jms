@@ -1,0 +1,36 @@
+package eak;
+
+import javax.ejb.Local;
+import javax.ejb.LocalBean;
+import javax.ejb.Stateless;
+
+/**
+ * Session Bean implementation class UpdateStatisticsBroadcasterBean
+ */
+@Stateless(mappedName = "UpdateStatisticsBroadcasterBean")
+@Local(UpdateStatistics.class)
+@LocalBean
+public class UpdateStatisticsBroadcasterBean implements UpdateStatistics {
+
+    /**
+     * Default constructor. 
+     */
+    public UpdateStatisticsBroadcasterBean() {
+        // TODO Auto-generated constructor stub
+    }
+
+	/**
+     * @see UpdateStatistics#coordinatesAdd(long, long)
+     */
+    public void coordinatesAdd(long personId, long numberOfNewCoorinates) {
+        // TODO Auto-generated method stub
+    }
+
+	/**
+     * @see UpdateStatistics#personRemoved(long)
+     */
+    public void personRemoved(long personId) {
+        // TODO Auto-generated method stub
+    }
+
+}

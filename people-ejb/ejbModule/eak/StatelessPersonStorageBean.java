@@ -1,0 +1,83 @@
+package eak;
+import eak.entity.*;
+
+import java.util.List;
+import java.util.Date;
+import java.util.Vector;
+
+import javax.ejb.*;
+import javax.persistence.*;
+import javax.persistence.criteria.*;
+
+@Stateless(name="PersonStorageBean")
+@Remote(StatelessPersonStorage.class)
+public class StatelessPersonStorageBean implements StatelessPersonStorage{
+
+	@PersistenceContext
+	private EntityManager em;
+
+	@EJB(lookup="UpdateStatisticsBroadcasterBean")
+	UpdateStatistics cstat;
+
+    public String getPersonById(long id){
+      Person person = em.find(Person.class, id);
+      if (person == null) return null;
+      return (person.getFirstName() + " " + person.getLastName());
+    }
+	
+    // Visszaadja a megadott azonosítójú személyt.
+    // Ha nincs találat, null-t ad vissza.
+
+    public long addPerson(String firstName, String lastName, Date birthDate, BloodGroup bloodGroup) throws StorageException {
+    // Hozzáad egy új személyt. Dobjunk kivételt a következő esetekben:
+    // - Nem töltöttük ki valamelyik kötelező mezőt
+    // - A születési dátum 1900 előtti
+    // A metódus az új személy azonosítóját adja vissza.
+   	java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+    Date date1 = null;
+    try {
+      date1 = sdf.parse("1900-01-01");
+    }
+    catch (java.text.ParseException ex){
+      throw new StorageException();
+    }
+    if (date1.compareTo(birthDate)>0){
+      throw new StorageException();
+    }
+    List<GpsCoordinate> coords = new Vector<GpsCoordinate>();
+    Person person = new Person(0L, firstName, lastName, birthDate, null, bloodGroup, coords);
+    em.persist(person);
+    //A flush()-sal az objektumunk is megkapta az azonosítót
+    return person.getId();
+   }
+
+    public boolean removePersonById(long id) {
+      // Eltávolítja az azosoítójával megadott személyt.
+      // Ha volt találat igazat, különben hamisat ad vissza.
+      Person person = em.find(Person.class, id);
+      if (person == null) {		
+  
+        return false;
+      }
+      em.remove(person);
+      return true;
+    }
+   
+    public java.util.List<Long> getPeopleIds(){
+    CriteriaBuilder cb = em.getCriteriaBuilder();
+    CriteriaQuery<Person> cq = cb.createQuery(Person.class);
+    Root<Person> rootEntry = cq.from(Person.class);
+    CriteriaQuery<Person> all = cq.select(rootEntry);
+    TypedQuery<Person> allQuery = em.createQuery(all);
+    List<Person> people = allQuery.getResultList();
+    List<Long> ids = new Vector<Long>();
+    for (int i = 0; i < people.size(); i++) {
+      Person somebody = people.get(i);
+      long idu = somebody.getId();
+      ids.add(idu);
+    }
+    return ids; 
+  }
+
+
+}

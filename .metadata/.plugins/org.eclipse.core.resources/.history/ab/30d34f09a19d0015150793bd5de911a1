@@ -1,0 +1,75 @@
+package eak;
+
+import javax.annotation.Resource;
+import javax.ejb.Local;
+import javax.ejb.Stateless;
+import javax.inject.Inject;
+import javax.jms.*;
+
+/**
+ * Session Bean implementation class UpdateStatisticsBroadcasterBean
+ */
+@JMSConnectionFactoryDefinition(
+		name="java:global/jms/StatisticsConnectionFactory",
+		interfaceName="javax.jms.ConnectionFactory",
+		clientId="jmsweb"
+	)
+	//Define a JMS destination for this application.
+	@JMSDestinationDefinition(
+		name="java:global/jms/CoordinateStatisticsTopic",
+		interfaceName="javax.jms.Topic",
+		destinationName="CoordinateStatisticsTopic"
+	)
+@Stateless(mappedName = "UpdateStatisticsBroadcasterBean")
+@Local(UpdateStatistics.class)
+public class UpdateStatisticsBroadcasterBean implements UpdateStatistics {
+
+	// Use the connection factory defined above.
+	@Inject
+	@JMSConnectionFactory(value="java:global/jms/StatisticsConnectionFactory")
+	private JMSContext context;
+	
+	// The message destination is a custom message topic. 
+	@Resource(lookup="java:global/jms/CoordinateStatisticsTopic")
+	private Destination destination;	
+	
+    /**
+     * Default constructor. 
+     */
+    public UpdateStatisticsBroadcasterBean() {}
+
+	/**
+     * @see UpdateStatistics#coordinatesAdd(long, long)
+     */
+    public void coordinatesAdded(long personId, long numberOfNewCoorinates) {
+    	JMSProducer prod = context.createProducer();
+    	StreamMessage m = context.createStreamMessage();
+    	try {
+			m.writeInt(0);
+			m.writeLong(personId);
+			m.writeLong(numberOfNewCoorinates);
+		} catch (JMSException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	prod.send(destination, m);
+	
+    }
+
+   
+	/**
+     * @see UpdateStatistics#personRemoved(long)
+     */
+    public void personRemoved(long personId) {
+		JMSProducer prod = context.createProducer();
+    	StreamMessage m = context.createStreamMessage();
+    	try {
+			m.writeInt(1);
+			m.writeLong(personId);
+		} catch (JMSException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+
+}
